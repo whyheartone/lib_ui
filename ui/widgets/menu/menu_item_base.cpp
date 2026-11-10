@@ -68,6 +68,23 @@ void ItemBase::setIndex(int index) {
 	_index = index;
 }
 
+void ItemBase::setSection(bool first, bool last) {
+	if (_sectionFirst == first && _sectionLast == last) {
+		return;
+	}
+	_sectionFirst = first;
+	_sectionLast = last;
+	update();
+}
+
+bool ItemBase::sectionFirst() const {
+	return _sectionFirst;
+}
+
+bool ItemBase::sectionLast() const {
+	return _sectionLast;
+}
+
 void ItemBase::setClicked(TriggeredSource source) {
 	if (isEnabled()) {
 		_lastTriggeredSource = source;

@@ -13,6 +13,9 @@
 #include <QtGui/QPainter>
 #include <QtGui/QtEvents>
 
+// AyuGram includes
+#include "ayu/ayu_ui_settings.h"
+
 namespace Ui {
 
 BoxContentDivider::BoxContentDivider(
@@ -29,7 +32,14 @@ BoxContentDivider::BoxContentDivider(
 void BoxContentDivider::paintEvent(QPaintEvent *e) {
 	QPainter p(this);
 
-	p.fillRect(e->rect(), _st.bg);
+	p.fillRect(
+		e->rect(),
+		AyuUiSettings::isMaterialSettings()
+			? QBrush(st::windowBg)
+			: QBrush(_st.bg));
+	if (AyuUiSettings::isMaterialSettings()) {
+		return;
+	}
 	if (_parts & RectPart::Top) {
 		paintTop(p);
 	}

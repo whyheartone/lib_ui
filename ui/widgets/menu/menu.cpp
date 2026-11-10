@@ -193,6 +193,20 @@ int Menu::recountWidth() const {
 }
 
 int Menu::recountHeight() const {
+	const auto count = int(_actionWidgets.size());
+	const auto isSeparator = [&](int index) {
+		return (index < 0)
+			|| (index >= count)
+			|| !_actionWidgets[index]
+			|| _actionWidgets[index]->action()->isSeparator();
+	};
+	for (auto i = 0; i != count; ++i) {
+		if (_actionWidgets[i] && !isSeparator(i)) {
+			_actionWidgets[i]->setSection(
+				isSeparator(i - 1),
+				isSeparator(i + 1));
+		}
+	}
 	auto result = 0;
 	for (const auto &widget : _actionWidgets) {
 		if (widget->y() != result) {

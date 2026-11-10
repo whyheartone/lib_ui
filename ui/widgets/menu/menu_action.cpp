@@ -96,6 +96,16 @@ void Action::paintEvent(QPaintEvent *e) {
 }
 
 void Action::paintBackground(QPainter &p, bool selected) {
+	if (PaintItemTile(
+			p,
+			width(),
+			_height,
+			_st,
+			sectionFirst(),
+			sectionLast(),
+			selected)) {
+		return;
+	}
 	if (selected && _st.itemBgOver->c.alpha() < 255) {
 		p.fillRect(0, 0, width(), _height, _st.itemBg);
 	}

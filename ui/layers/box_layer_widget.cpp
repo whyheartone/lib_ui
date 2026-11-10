@@ -14,7 +14,12 @@
 #include "styles/style_layers.h"
 #include "styles/palette.h"
 
+// AyuGram includes
+#include "ayu/ayu_ui_settings.h"
+
+
 #include <QtGui/QWindow>
+#include <QtGui/QPainterPath>
 
 #include <limits>
 
@@ -42,7 +47,8 @@ BoxLayerWidget::BoxLayerWidget(
 : LayerWidget(parent)
 , _layer(delegate)
 , _content(std::move(content))
-, _roundRect(st::boxRadius, st().bg) {
+, _radius(AyuUiSettings::dialogRadius(st::boxRadius))
+, _roundRect(_radius, st().bg) {
 	_content->setParent(this);
 
 	_additionalTitle.changes(
@@ -122,18 +128,18 @@ void BoxLayerWidget::paintEvent(QPaintEvent *e) {
 
 	const auto clip = e->rect();
 	const auto paintTopRounded = !(_customCornersFilling & RectPart::FullTop)
-		&& clip.intersects(QRect(0, 0, width(), st::boxRadius));
+		&& clip.intersects(QRect(0, 0, width(), _radius));
 	const auto paintBottomRounded = !(_customCornersFilling
 		& RectPart::FullBottom)
 		&& clip.intersects(
-			QRect(0, height() - st::boxRadius, width(), st::boxRadius));
+			QRect(0, height() - _radius, width(), _radius));
 	if (paintTopRounded || paintBottomRounded) {
 		_roundRect.paint(p, rect(), RectPart::None
 			| (paintTopRounded ? RectPart::FullTop : RectPart::None)
 			| (paintBottomRounded ? RectPart::FullBottom : RectPart::None));
 	}
 	const auto other = e->region().intersected(
-		QRect(0, st::boxRadius, width(), height() - 2 * st::boxRadius));
+		QRect(0, _radius, width(), height() - 2 * _radius));
 	if (!other.isEmpty()) {
 		for (const auto &rect : other) {
 			p.fillRect(rect, st().bg);
@@ -461,6 +467,18 @@ void BoxLayerWidget::resizeEvent(QResizeEvent *e) {
 	const auto top = contentTop();
 	_content->resize(width(), height() - top - buttonsHeight());
 	_content->moveToLeft(0, top);
+	if (AyuUiSettings::isMaterialDialogs()) {
+		auto path = QPainterPath();
+		path.addRoundedRect(
+			QRectF(rect()).translated(-QPointF(_content->pos())),
+			_radius,
+			_radius);
+		_content->setMask(
+			QRegion(path.toFillPolygon().toPolygon())
+				& QRegion(_content->rect()));
+	} else {
+		_content->clearMask();
+	}
 
 	LayerWidget::resizeEvent(e);
 }

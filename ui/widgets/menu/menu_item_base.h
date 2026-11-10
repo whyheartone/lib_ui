@@ -35,6 +35,10 @@ public:
 	int index() const;
 	void setIndex(int index);
 
+	void setSection(bool first, bool last);
+	[[nodiscard]] bool sectionFirst() const;
+	[[nodiscard]] bool sectionLast() const;
+
 	void setClicked(TriggeredSource source = TriggeredSource::Mouse);
 
 	rpl::producer<CallbackData> clicks() const;
@@ -73,6 +77,8 @@ protected:
 
 private:
 	bool _mousePressed = false;
+	bool _sectionFirst = true;
+	bool _sectionLast = true;
 	int _index = -1;
 
 	rpl::variable<bool> _selected = false;

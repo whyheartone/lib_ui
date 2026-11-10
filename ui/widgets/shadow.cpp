@@ -10,6 +10,11 @@
 #include "ui/painter.h"
 #include "ui/ui_utility.h"
 #include "styles/style_widgets.h"
+#include "styles/style_layers.h"
+
+// AyuGram includes
+#include "ayu/ayu_ui_settings.h"
+
 #include "styles/palette.h"
 
 #include <QtGui/QPainter>
@@ -137,10 +142,19 @@ PlainShadow::PlainShadow(QWidget *parent, style::color color)
 }
 
 void PlainShadow::paintEvent(QPaintEvent *e) {
+	if (AyuUiSettings::isMaterialSettings()
+		&& property("hgDrawerLine").toBool()) {
+		return;
+	}
 	QPainter(this).fillRect(e->rect(), _color);
 }
 
 void Shadow::paint(QPainter &p, const QRect &box, int outerWidth, const style::Shadow &st, RectParts sides) {
+	if (&st == &st::boxRoundShadow && AyuUiSettings::isMaterialDialogs()) {
+		static const auto rounded = BoxShadow(st::defaultBoxShadow);
+		rounded.paint(p, box, AyuUiSettings::dialogRadius(st::boxRadius));
+		return;
+	}
 	ShadowPaint<style::Shadow>(p, box, outerWidth, st, sides);
 }
 

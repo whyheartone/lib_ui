@@ -221,6 +221,7 @@ private:
 	void updateRoundingOverlay();
 
 	const style::PopupMenu &_st;
+	const int _radius = 0;
 
 	RoundRect _roundRect;
 	BoxShadow _boxShadow;

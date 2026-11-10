@@ -19,6 +19,10 @@
 #include "styles/style_widgets.h"
 #include "styles/palette.h"
 
+
+// AyuGram includes
+#include "ayu/ayu_ui_settings.h"
+
 #include <QtGui/QtEvents>
 
 namespace Ui {
@@ -285,7 +289,7 @@ void LayerStackWidget::BackgroundWidget::paintEvent(QPaintEvent *e) {
 			sides |= RectPart::Bottom;
 		}
 		if (topCorners || bottomCorners) {
-			p.setClipRegion(QRegion(rect()) - specialLayerBox.marginsRemoved(QMargins(st::boxRadius, 0, st::boxRadius, 0)) - specialLayerBox.marginsRemoved(QMargins(0, st::boxRadius, 0, st::boxRadius)));
+			p.setClipRegion(QRegion(rect()) - specialLayerBox.marginsRemoved(QMargins(AyuUiSettings::dialogRadius(st::boxRadius), 0, AyuUiSettings::dialogRadius(st::boxRadius), 0)) - specialLayerBox.marginsRemoved(QMargins(0, AyuUiSettings::dialogRadius(st::boxRadius), 0, AyuUiSettings::dialogRadius(st::boxRadius))));
 		}
 		Ui::Shadow::paint(p, specialLayerBox, width(), st::boxRoundShadow, Ui::SpecialLayerShadowCorners(), sides);
 		if (topCorners || bottomCorners) {
@@ -379,10 +383,10 @@ bool LayerWidget::overlaps(const QRect &globalRect) {
 	if (testAttribute(Qt::WA_OpaquePaintEvent)) {
 		return rect().contains(testRect);
 	}
-	if (QRect(0, st::boxRadius, width(), height() - 2 * st::boxRadius).contains(testRect)) {
+	if (QRect(0, AyuUiSettings::dialogRadius(st::boxRadius), width(), height() - 2 * AyuUiSettings::dialogRadius(st::boxRadius)).contains(testRect)) {
 		return true;
 	}
-	if (QRect(st::boxRadius, 0, width() - 2 * st::boxRadius, height()).contains(testRect)) {
+	if (QRect(AyuUiSettings::dialogRadius(st::boxRadius), 0, width() - 2 * AyuUiSettings::dialogRadius(st::boxRadius), height()).contains(testRect)) {
 		return true;
 	}
 	return false;

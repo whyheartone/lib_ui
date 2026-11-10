@@ -8,9 +8,12 @@
 
 #include "ui/effects/ripple_animation.h"
 #include "ui/painter.h"
+#include "ui/effects/animation_value.h"
+#include "styles/palette.h"
 #include "styles/style_widgets.h"
 
 #include <QtGui/QtEvents>
+#include <QtGui/QPainterPath>
 #include <QAccessible>
 
 namespace Ui {
@@ -162,14 +165,59 @@ int SideBarButton::resizeGetHeight(int newWidth) {
 	return result + std::max(add, 0);
 }
 
+void SideBarButton::setTile(bool tiled, bool first, bool last) {
+	if (_tiled == tiled && _tileFirst == first && _tileLast == last) {
+		return;
+	}
+	_tiled = tiled;
+	_tileFirst = first;
+	_tileLast = last;
+	update();
+}
+
 void SideBarButton::paintEvent(QPaintEvent *e) {
 	auto p = Painter(this);
 	const auto clip = e->rect();
 
 	const auto &bg = _active ? _st.textBgActive : _st.textBg;
-	p.fillRect(clip, bg);
-
-	RippleButton::paintRipple(p, 0, 0);
+	if (_tiled) {
+		p.fillRect(clip, _st.textBg);
+		const auto side = style::ConvertScale(6);
+		const auto top = style::ConvertScale(_tileFirst ? 3 : 1);
+		const auto bottom = style::ConvertScale(_tileLast ? 3 : 1);
+		const auto big = qreal(style::ConvertScale(16));
+		const auto small = qreal(style::ConvertScale(6));
+		const auto upper = _tileFirst ? big : small;
+		const auto lower = _tileLast ? big : small;
+		const auto r = QRectF(side, top, width() - 2 * side, height() - top - bottom);
+		auto path = QPainterPath();
+		path.moveTo(r.left() + upper, r.top());
+		path.lineTo(r.right() - upper, r.top());
+		path.arcTo(QRectF(r.right() - 2 * upper, r.top(), 2 * upper, 2 * upper), 90, -90);
+		path.lineTo(r.right(), r.bottom() - lower);
+		path.arcTo(QRectF(r.right() - 2 * lower, r.bottom() - 2 * lower, 2 * lower, 2 * lower), 0, -90);
+		path.lineTo(r.left() + lower, r.bottom());
+		path.arcTo(QRectF(r.left(), r.bottom() - 2 * lower, 2 * lower, 2 * lower), 270, -90);
+		path.lineTo(r.left(), r.top() + upper);
+		path.arcTo(QRectF(r.left(), r.top(), 2 * upper, 2 * upper), 180, -90);
+		path.closeSubpath();
+		{
+			auto hq = PainterHighQualityEnabler(p);
+			p.fillPath(path, _active
+				? anim::color(
+					_st.textBg->c,
+					st::windowActiveTextFg->c,
+					0.24)
+				: anim::color(_st.textBg->c, st::windowFg->c, 0.045));
+		}
+		p.save();
+		p.setClipPath(path, Qt::IntersectClip);
+		RippleButton::paintRipple(p, 0, 0);
+		p.restore();
+	} else {
+		p.fillRect(clip, bg);
+		RippleButton::paintRipple(p, 0, 0);
+	}
 
 	if (_lock.locked) {
 		p.setOpacity(kPremiumLockedOpacity);

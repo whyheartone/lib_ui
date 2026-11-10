@@ -6,6 +6,10 @@
 //
 #pragma once
 
+namespace style {
+struct Menu;
+} // namespace style
+
 namespace Ui::Menu {
 
 enum class TriggeredSource {
@@ -21,6 +25,15 @@ struct CallbackData {
 	bool selected = false;
 	bool preventClose = false;
 };
+
+bool PaintItemTile(
+	QPainter &p,
+	int width,
+	int height,
+	const style::Menu &st,
+	bool first,
+	bool last,
+	bool selected);
 
 not_null<QAction*> CreateAction(
 	QWidget *parent,

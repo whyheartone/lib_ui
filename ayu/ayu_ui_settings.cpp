@@ -6,6 +6,8 @@
 // Copyright @Radolyn, 2026
 #include "ayu_ui_settings.h"
 
+#include "ui/style/style_core_scale.h"
+
 #include <utility>
 
 namespace AyuUiSettings {
@@ -13,6 +15,9 @@ namespace AyuUiSettings {
 QString monoFont;
 double wideMultiplier = 1.0;
 bool materialSwitches;
+bool materialMenus = false;
+bool materialDialogs = false;
+bool materialSettings = false;
 int avatarCorners = kMaxAvatarCorners;
 
 void setMonoFont(QString newFont) {
@@ -45,6 +50,42 @@ void setMaterialSwitches(bool val) {
 
 bool isMaterialSwitches() {
 	return materialSwitches;
+}
+
+void setMaterialMenus(bool val) {
+	materialMenus = val;
+}
+
+bool isMaterialMenus() {
+	return materialMenus;
+}
+
+void setMaterialSettings(bool val) {
+	materialSettings = val;
+}
+
+bool isMaterialSettings() {
+	return materialSettings;
+}
+
+void setMaterialDialogs(bool val) {
+	materialDialogs = val;
+}
+
+bool isMaterialDialogs() {
+	return materialDialogs;
+}
+
+int settingsRowExtra() {
+	return materialSettings ? style::ConvertScale(3) : 0;
+}
+
+int menuRadius(int radius) {
+	return materialMenus ? std::max(radius, style::ConvertScale(16)) : radius;
+}
+
+int dialogRadius(int radius) {
+	return materialDialogs ? std::max(radius, style::ConvertScale(18)) : radius;
 }
 
 void setAvatarCorners(int val) {

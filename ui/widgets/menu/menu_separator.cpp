@@ -7,6 +7,8 @@
 #include "ui/widgets/menu/menu_separator.h"
 
 #include "ui/painter.h"
+#include "ui/widgets/menu/menu_common.h"
+#include "ayu/ayu_ui_settings.h"
 #include "styles/style_widgets.h"
 
 namespace Ui::Menu {
@@ -21,7 +23,9 @@ Separator::Separator(
 , _padding(separator.padding)
 , _fg(separator.fg)
 , _bg(st.itemBg)
-, _height(_padding.top() + _lineWidth + _padding.bottom())
+, _height(AyuUiSettings::isMaterialMenus()
+	? style::ConvertScale(6)
+	: (_padding.top() + _lineWidth + _padding.bottom()))
 , _action(action) {
 	setEnabled(false);
 	fitToMenuWidth();
@@ -30,6 +34,9 @@ Separator::Separator(
 		Painter p(this);
 
 		p.fillRect(0, 0, width(), _height, _bg);
+		if (AyuUiSettings::isMaterialMenus()) {
+			return;
+		}
 		p.fillRect(
 			_padding.left(),
 			_padding.top(),

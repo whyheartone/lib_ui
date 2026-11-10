@@ -9,6 +9,9 @@
 #include "ui/effects/ripple_animation.h"
 #include "styles/style_layers.h"
 
+// AyuGram includes
+#include "ayu/ayu_ui_settings.h"
+
 namespace Ui {
 namespace {
 
@@ -16,11 +19,11 @@ namespace {
 	const auto &st = st::boxRoundShadow;
 
 	const auto s = QSize(
-		st::boxRadius * 2 + st.extend.left(),
-		st::boxRadius * 2 + st.extend.right());
+		AyuUiSettings::dialogRadius(st::boxRadius) * 2 + st.extend.left(),
+		AyuUiSettings::dialogRadius(st::boxRadius) * 2 + st.extend.right());
 	const auto mask = Ui::RippleAnimation::MaskByDrawer(s, false, [&](
 			QPainter &p) {
-		p.drawRoundedRect(QRect(QPoint(), s), st::boxRadius, st::boxRadius);
+		p.drawRoundedRect(QRect(QPoint(), s), AyuUiSettings::dialogRadius(st::boxRadius), AyuUiSettings::dialogRadius(st::boxRadius));
 	});
 	struct Corner {
 		const style::icon &icon;

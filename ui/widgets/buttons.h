@@ -341,6 +341,10 @@ public:
 
 	void finishAnimating();
 
+	void setTile(bool tiled, bool first, bool last);
+	void setTransparentBg();
+	static void AddCompactStyle(const style::SettingsButton *st);
+
 protected:
 	int resizeGetHeight(int newWidth) override;
 	void onStateChanged(
@@ -358,6 +362,8 @@ protected:
 private:
 	void setText(TextWithEntities &&text);
 	[[nodiscard]] QRect toggleRect() const;
+	[[nodiscard]] int rowExtra(int width) const;
+	void updateTile();
 
 	const style::SettingsButton &_st;
 	style::margins _padding;
@@ -365,6 +371,10 @@ private:
 	std::unique_ptr<Ui::ToggleView> _toggle;
 	std::optional<QColor> _textColorOverride;
 	Text::MarkedContext _context;
+	bool _tiled = false;
+	bool _tileFirst = true;
+	bool _tileLast = true;
+	bool _transparentBg = false;
 
 };
 

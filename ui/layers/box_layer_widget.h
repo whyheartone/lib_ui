@@ -140,6 +140,7 @@ private:
 	int _maxContentHeight = 0;
 	object_ptr<BoxContent> _content;
 
+	const int _radius = 0;
 	RoundRect _roundRect;
 	object_ptr<FlatLabel> _title = { nullptr };
 	Fn<TextWithEntities()> _titleFactory;

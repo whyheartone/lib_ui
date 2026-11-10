@@ -16,8 +16,16 @@
 #include "ui/rect.h"
 #include "ui/qt_object_factory.h"
 #include "ui/round_rect.h"
+#include "ui/wrap/vertical_layout.h"
+#include "ui/effects/animation_value.h"
+#include "styles/palette.h"
+
+// AyuGram includes
+#include "ayu/ayu_ui_settings.h"
+
 
 #include <QtGui/QtEvents>
+#include <QtGui/QPainterPath>
 
 namespace Ui {
 namespace {
@@ -483,9 +491,11 @@ void RoundButton::paintEvent(QPaintEvent *e) {
 	if (_fullWidthOverride < 0) {
 		rounded = QRect(0, rounded.top(), innerWidth - _fullWidthOverride, rounded.height());
 	}
+	const auto pill = _fullRadius
+		|| (AyuUiSettings::isMaterialDialogs() && !_cornerRadii);
 	const auto drawRect = [&](const RoundRect &rect) {
 		const auto fill = myrtlrect(rounded);
-		if (_fullRadius) {
+		if (pill) {
 			const auto radius = rounded.height() / 2;
 			PainterHighQualityEnabler hq(p);
 			p.setPen(_penOverride ? *_penOverride : Qt::NoPen);
@@ -587,7 +597,7 @@ QImage RoundButton::prepareRippleMask() const {
 	if (_fullWidthOverride < 0) {
 		rounded = QRect(0, rounded.top(), innerWidth - _fullWidthOverride, rounded.height());
 	}
-	if (_fullRadius) {
+	if (_fullRadius || (AyuUiSettings::isMaterialDialogs() && !_cornerRadii)) {
 		return RippleAnimation::RoundRectMask(
 			rounded.size(),
 			rounded.height() / 2);
@@ -974,13 +984,182 @@ int SettingsButton::fullTextWidth() const {
 	return _text.maxWidth();
 }
 
+namespace {
+
+[[nodiscard]] QPainterPath SettingsTilePath(
+		QRect rect,
+		bool first,
+		bool last) {
+	const auto side = style::ConvertScale(8);
+	const auto top = style::ConvertScale(first ? 3 : 1);
+	const auto bottom = style::ConvertScale(last ? 3 : 1);
+	const auto big = std::min(
+		qreal(style::ConvertScale(20)),
+		rect.height() * 0.32);
+	const auto small = qreal(style::ConvertScale(6));
+	const auto upper = first ? big : small;
+	const auto lower = last ? big : small;
+	const auto r = QRectF(
+		rect.left() + side,
+		rect.top() + top,
+		rect.width() - 2 * side,
+		rect.height() - top - bottom);
+	auto path = QPainterPath();
+	path.moveTo(r.left() + upper, r.top());
+	path.lineTo(r.right() - upper, r.top());
+	path.arcTo(QRectF(r.right() - 2 * upper, r.top(), 2 * upper, 2 * upper), 90, -90);
+	path.lineTo(r.right(), r.bottom() - lower);
+	path.arcTo(QRectF(r.right() - 2 * lower, r.bottom() - 2 * lower, 2 * lower, 2 * lower), 0, -90);
+	path.lineTo(r.left() + lower, r.bottom());
+	path.arcTo(QRectF(r.left(), r.bottom() - 2 * lower, 2 * lower, 2 * lower), 270, -90);
+	path.lineTo(r.left(), r.top() + upper);
+	path.arcTo(QRectF(r.left(), r.top(), 2 * upper, 2 * upper), 180, -90);
+	path.closeSubpath();
+	return path;
+}
+
+} // namespace
+
+namespace {
+
+[[nodiscard]] std::vector<const style::SettingsButton*> &CompactStyles() {
+	static auto result = std::vector<const style::SettingsButton*>();
+	return result;
+}
+
+} // namespace
+
+void SettingsButton::AddCompactStyle(const style::SettingsButton *st) {
+	CompactStyles().push_back(st);
+}
+
+int SettingsButton::rowExtra(int width) const {
+	if (width < style::ConvertScale(160)) {
+		return 0;
+	}
+	for (const auto compact : CompactStyles()) {
+		if (compact == &_st) {
+			return 0;
+		}
+	}
+	return AyuUiSettings::settingsRowExtra();
+}
+
+void SettingsButton::setTransparentBg() {
+	_transparentBg = true;
+	update();
+}
+
+void SettingsButton::setTile(bool tiled, bool first, bool last) {
+	if (_tiled == tiled && _tileFirst == first && _tileLast == last) {
+		return;
+	}
+	_tiled = tiled;
+	_tileFirst = first;
+	_tileLast = last;
+	update();
+}
+
+namespace {
+
+[[nodiscard]] bool HoldsSettingsButton(not_null<QWidget*> widget) {
+	if (dynamic_cast<SettingsButton*>(widget.get())) {
+		return true;
+	}
+	for (const auto child : widget->findChildren<QWidget*>()) {
+		if (dynamic_cast<SettingsButton*>(child) && child->isVisibleTo(widget)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+[[nodiscard]] bool HasNeighbourButtons(
+		not_null<VerticalLayout*> layout,
+		not_null<QWidget*> row) {
+	for (const auto child : layout->children()) {
+		const auto widget = qobject_cast<QWidget*>(child);
+		if (widget
+			&& widget != row
+			&& !widget->isHidden()
+			&& widget->height() > 0
+			&& HoldsSettingsButton(widget)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+} // namespace
+
+void SettingsButton::updateTile() {
+	_tiled = false;
+	if (!AyuUiSettings::isMaterialSettings()
+		|| _transparentBg
+		|| width() < style::ConvertScale(160)) {
+		return;
+	}
+	auto row = static_cast<QWidget*>(this);
+	auto layout = (VerticalLayout*)nullptr;
+	for (auto parent = parentWidget(); parent; parent = parent->parentWidget()) {
+		const auto candidate = dynamic_cast<VerticalLayout*>(parent);
+		if (candidate) {
+			layout = candidate;
+			if (HasNeighbourButtons(candidate, row)) {
+				break;
+			}
+		}
+		row = parent;
+	}
+	_tiled = true;
+	_tileFirst = true;
+	_tileLast = true;
+	if (!layout) {
+		return;
+	}
+	const auto top = row->y();
+	const auto bottom = row->y() + row->height();
+	const auto join = style::ConvertScale(2);
+	for (const auto child : layout->children()) {
+		const auto widget = qobject_cast<QWidget*>(child);
+		if (!widget
+			|| widget == row
+			|| widget->isHidden()
+			|| widget->height() <= 0
+			|| !HoldsSettingsButton(widget)) {
+			continue;
+		}
+		if (std::abs(widget->y() + widget->height() - top) <= join) {
+			_tileFirst = false;
+		} else if (std::abs(widget->y() - bottom) <= join) {
+			_tileLast = false;
+		}
+	}
+	if (property("hgJoinTop").toBool()) {
+		_tileFirst = false;
+	}
+	if (property("hgJoinBottom").toBool()) {
+		_tileLast = false;
+	}
+}
+
 void SettingsButton::paintEvent(QPaintEvent *e) {
 	Painter p(this);
+	updateTile();
 
 	const auto paintOver = (isOver() || isDown()) && !isDisabled();
 	paintBg(p, e->rect(), paintOver);
 
-	paintRipple(p, 0, 0);
+	if (_tiled) {
+		p.save();
+		p.setClipPath(
+			SettingsTilePath(rect(), _tileFirst, _tileLast),
+			Qt::IntersectClip);
+		paintRipple(p, 0, 0);
+		p.restore();
+	} else {
+		paintRipple(p, 0, 0);
+	}
 
 	const auto outerw = width();
 	paintText(p, paintOver, outerw);
@@ -991,6 +1170,22 @@ void SettingsButton::paintEvent(QPaintEvent *e) {
 }
 
 void SettingsButton::paintBg(Painter &p, const QRect &rect, bool over) const {
+	if (_transparentBg && AyuUiSettings::isMaterialSettings()) {
+		return;
+	}
+	if (_tiled) {
+		p.fillRect(rect, _st.textBg);
+		auto hq = PainterHighQualityEnabler(p);
+		const auto path = SettingsTilePath(
+			QRect(0, 0, width(), height()),
+			_tileFirst,
+			_tileLast);
+		p.fillPath(path, anim::color(
+			_st.textBg->c,
+			st::windowFg->c,
+			over ? 0.08 : 0.045));
+		return;
+	}
 	p.fillRect(rect, over ? _st.textBgOver : _st.textBg);
 }
 
@@ -1007,10 +1202,14 @@ void SettingsButton::paintText(Painter &p, bool over, int outerw) const {
 		: over
 		? _st.textFgOver
 		: _st.textFg);
+	const auto room = std::max(
+		0,
+		(height() - _padding.top() - _st.height - _padding.bottom()) / 2);
+	const auto extra = std::min(room, rowExtra(width()));
 	_text.drawLeftElided(
 		p,
 		_padding.left(),
-		_padding.top(),
+		_padding.top() + extra,
 		available,
 		outerw);
 }
@@ -1036,7 +1235,10 @@ QRect SettingsButton::maybeToggleRect() const {
 }
 
 int SettingsButton::resizeGetHeight(int newWidth) {
-	return _padding.top() + _st.height + _padding.bottom();
+	return _padding.top()
+		+ _st.height
+		+ _padding.bottom()
+		+ 2 * rowExtra(newWidth);
 }
 
 void SettingsButton::onStateChanged(

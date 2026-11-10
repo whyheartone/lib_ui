@@ -21,6 +21,16 @@ int getWideMultiplied(int width, double mult);
 void setMaterialSwitches(bool val);
 bool isMaterialSwitches();
 
+void setMaterialMenus(bool val);
+bool isMaterialMenus();
+void setMaterialSettings(bool val);
+bool isMaterialSettings();
+void setMaterialDialogs(bool val);
+bool isMaterialDialogs();
+int menuRadius(int radius);
+int settingsRowExtra();
+int dialogRadius(int radius);
+
 void setAvatarCorners(int val);
 int getAvatarCorners();
 

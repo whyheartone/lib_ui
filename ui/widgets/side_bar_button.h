@@ -29,6 +29,7 @@ public:
 		Fn<bool()> paused = nullptr);
 
 	void setActive(bool active);
+	void setTile(bool tiled, bool first, bool last);
 	void setBadge(const QString &badge, bool muted);
 	void setIconOverride(
 		const style::icon *iconOverride,
@@ -66,6 +67,9 @@ private:
 	QImage _iconCacheActive;
 	int _iconCacheBadgeWidth = 0;
 	bool _active = false;
+	bool _tiled = false;
+	bool _tileFirst = true;
+	bool _tileLast = true;
 	bool _badgeMuted = false;
 	bool _showIcon = true;
 	bool _showText = true;
