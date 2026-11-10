@@ -97,6 +97,18 @@ void BoxLayerWidget::setStyle(const style::Box &st) {
 	updateMaxRealHeight();
 }
 
+void BoxLayerWidget::setMinimalTopSkip(int skip) {
+	if (_minimalTopSkip == skip) {
+		return;
+	}
+	_minimalTopSkip = skip;
+	const auto was = geometry();
+	parentResized();
+	if (geometry() != was) {
+		resizeEvent(nullptr);
+	}
+}
+
 const style::Box &BoxLayerWidget::style() {
 	return st();
 }
@@ -179,7 +191,7 @@ void BoxLayerWidget::parentResized() {
 	auto parentSize = parent->size();
 	setGeometry(
 		(parentSize.width() - width()) / 2,
-		(parentSize.height() - newHeight) / 2,
+		withMinimalTopSkip((parentSize.height() - newHeight) / 2),
 		width(),
 		newHeight);
 	update();
@@ -194,7 +206,9 @@ void BoxLayerWidget::updateMaxRealHeight() {
 		: parent
 		? parent->height()
 		: std::numeric_limits<int>::max() / 2;
-	const auto max = containerHeight - margin.top() - margin.bottom();
+	const auto max = containerHeight
+		- withMinimalTopSkip(margin.top())
+		- margin.bottom();
 	_realHeightMax = max;
 	_contentHeightMax = max - contentTop() - buttonsHeight();
 }
@@ -429,9 +443,9 @@ void BoxLayerWidget::setDimensions(
 				|| forceCenterPosition) {
 				const auto top1 = parentHeight - bottomMargin - newGeometry.height();
 				const auto top2 = (parentHeight - newGeometry.height()) / 2;
-				const auto newTop = forceCenterPosition
+				const auto newTop = withMinimalTopSkip(forceCenterPosition
 					? std::min(top1, top2)
-					: std::max(top1, top2);
+					: std::max(top1, top2));
 				if (newTop != newGeometry.top()) {
 					move(newGeometry.left(), newTop);
 					resizeEvent(0);
@@ -446,6 +460,12 @@ void BoxLayerWidget::setDimensions(
 
 int BoxLayerWidget::countRealHeight() const {
 	return std::min(_fullHeight, _realHeightMax.current());
+}
+
+int BoxLayerWidget::withMinimalTopSkip(int top) const {
+	return (_minimalTopSkip > 0 && _layer->centerWithinOuter())
+		? std::max(top, _minimalTopSkip)
+		: top;
 }
 
 int BoxLayerWidget::countFullHeight() const {
