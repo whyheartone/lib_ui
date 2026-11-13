@@ -26,6 +26,8 @@ struct CallbackData {
 	bool preventClose = false;
 };
 
+[[nodiscard]] QImage ItemTileMask(QSize size, bool first, bool last);
+
 bool PaintItemTile(
 	QPainter &p,
 	int width,

@@ -5,6 +5,7 @@
 // https://github.com/desktop-app/legal/blob/master/LEGAL
 //
 #include "ui/widgets/menu/menu_action.h"
+#include "ayu/ayu_ui_settings.h"
 
 #include "ui/effects/ripple_animation.h"
 #include "ui/painter.h"
@@ -222,6 +223,9 @@ QPoint Action::prepareRippleStartPosition() const {
 }
 
 QImage Action::prepareRippleMask() const {
+	if (AyuUiSettings::isMaterialMenus()) {
+		return ItemTileMask(size(), sectionFirst(), sectionLast());
+	}
 	return Ui::RippleAnimation::RectMask(size());
 }
 
