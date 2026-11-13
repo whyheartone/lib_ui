@@ -30,33 +30,27 @@ bool PaintItemTile(
 	if (!AyuUiSettings::isMaterialMenus()) {
 		return false;
 	}
-	const auto side = style::ConvertScale(6);
-	const auto top = style::ConvertScale(first ? 2 : 1);
-	const auto bottom = style::ConvertScale(last ? 2 : 1);
-	const auto big = std::min(
-		qreal(style::ConvertScale(14)),
-		height * 0.34);
-	const auto small = qreal(style::ConvertScale(5));
-	const auto upper = first ? big : small;
-	const auto lower = last ? big : small;
-	const auto r = QRectF(side, top, width - 2 * side, height - top - bottom);
-	auto path = QPainterPath();
-	path.moveTo(r.left() + upper, r.top());
-	path.lineTo(r.right() - upper, r.top());
-	path.arcTo(QRectF(r.right() - 2 * upper, r.top(), 2 * upper, 2 * upper), 90, -90);
-	path.lineTo(r.right(), r.bottom() - lower);
-	path.arcTo(QRectF(r.right() - 2 * lower, r.bottom() - 2 * lower, 2 * lower, 2 * lower), 0, -90);
-	path.lineTo(r.left() + lower, r.bottom());
-	path.arcTo(QRectF(r.left(), r.bottom() - 2 * lower, 2 * lower, 2 * lower), 270, -90);
-	path.lineTo(r.left(), r.top() + upper);
-	path.arcTo(QRectF(r.left(), r.top(), 2 * upper, 2 * upper), 180, -90);
-	path.closeSubpath();
+	(void)first;
+	(void)last;
+	// MD3 menu: items have no resting tile, only a rounded hover pill.
 	p.fillRect(0, 0, width, height, st.itemBg);
-	auto hq = PainterHighQualityEnabler(p);
-	p.fillPath(path, anim::color(st.itemBg->c, st::windowFg->c, 0.06));
-	if (selected) {
-		p.fillPath(path, st.itemBgOver);
+	if (!selected) {
+		return true;
 	}
+	const auto side = style::ConvertScale(6);
+	const auto vertical = style::ConvertScale(1);
+	const auto r = QRectF(
+		side,
+		vertical,
+		width - 2 * side,
+		height - 2 * vertical);
+	const auto radius = std::min(
+		r.height() / 2.,
+		qreal(style::ConvertScale(18)));
+	auto hq = PainterHighQualityEnabler(p);
+	p.setPen(Qt::NoPen);
+	p.setBrush(st.itemBgOver);
+	p.drawRoundedRect(r, radius, radius);
 	return true;
 }
 
